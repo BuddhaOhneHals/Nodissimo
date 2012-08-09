@@ -1,0 +1,13 @@
+doctype 5
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/style.css')
+    script(src='/javascripts/libs/jquery-1.4.3.min.js')
+    script(src='/javascripts/libs/angular-1.0.1.min.js')
+    script(src='/socket.io/socket.io.js')
+    script(src='/javascripts/app.js')
+    script(src='/javascripts/services.js')
+    script(src='/javascripts/controllers.js')
+  body(ng-app='dashboard')
+    block content
