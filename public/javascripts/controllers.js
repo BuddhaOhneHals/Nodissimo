@@ -10,3 +10,5 @@ function Dashboard($scope, $http, socket) {
         $http.get('http://localhost:8080/');
     };
 }
+
+

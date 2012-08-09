@@ -20,12 +20,12 @@ Nodissimo.Graph = function(element){
   this.createGraph();
 }
 
-$.extend(Hummingbird.Graph.prototype, {
+$.extend(Nodissimo.Graph.prototype, {
 
   name: "Graph",
 
-  onMessage: function(message, average) {
-    this.drawLogPath(average);
+  onUpdate: function(current_visits) {
+    this.drawLogPath(current_visits);
   },
 
   createGraph: function() {
