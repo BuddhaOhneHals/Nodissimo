@@ -1,8 +1,23 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    background-color: #eee;
 }
 
 a {
   color: #00B7FF;
+}
+
+div.graph .easel {
+    width: 600px;
+    height: 300px;
+    overflow: hidden;
+}
+
+div.graph .easel .bar {
+    width: 5px;
+    border-top: 298px solid #ccc;
+    border-bottom: 2px solid #1bcd00;
+    margin-right: 2px;
+    float: left;
 }
