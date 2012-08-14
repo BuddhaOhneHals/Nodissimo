@@ -21,3 +21,7 @@ div.graph .easel .bar {
     margin-right: 2px;
     float: left;
 }
+
+div.graph .easel .delimeter {
+    border-top-color: #ddd;
+}
