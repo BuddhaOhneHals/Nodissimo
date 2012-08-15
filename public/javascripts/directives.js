@@ -25,43 +25,56 @@ angular.module('dashboard.directives', []).
                 var jElement = $(element[0]);
                 var listenTo = attrs.listen;
                 var paused = false;
-                var delimeter = false;
+                var delimeterCount = 0;
+
+                var easelWidth = $('div.easel', jElement).innerWidth();
+                var easelHeight = $('div.easel', jElement).height();
+                var barWidth = $('div.bar', jElement).outerWidth(true);
 
                 scope.listen_value = 0;
                 scope.title = attrs.title;
                 scope.togglePause = function() {
-                    if(paused)
-                        paused = false;
-                    else
-                        paused = true;
+                    paused = (!paused);
                 }
 
-                var addBar = function() {
+                var fillEmptyGraph = function() {
+                    var count = Math.floor(easelWidth / barWidth) - 1;
+                    for(var i=0;i<count;i++) {
+                        addBar(true);
+                    }
+                }
+
+                var addBar = function(initial) {
                     if(paused)
                         return false;
                     var new_bar = $('.bar', jElement).last().clone();
 
-                    if(delimeter) {
+                    delimeterCount++;
+                    if(delimeterCount>15) {
                         new_bar.addClass('delimeter');
-                        delimeter = false;
+                        delimeterCount = 0;
                     } else
                         new_bar.removeClass('delimeter');
 
-                    new_bar.css('borderTopWidth', (298 - barHeight) + 'px');
-                    new_bar.css('borderBottomWidth', (2 + barHeight) + 'px');
+                    var value = 0;
+                    if(!initial)
+                        value = barHeight;
+
+                    new_bar.css('borderTopWidth', (easelHeight - 2 - value) + 'px');
+                    new_bar.css('borderBottomWidth', (2 + value) + 'px');
                     $('.easel', jElement).append(new_bar);
 
-                    if($('.bar', jElement).length > 60) {
+                    if(!initial)
                         $('.bar', jElement).first().remove();
-                    }
                 };
 
                 var calculateBarHeight = function(value) {
                     barHeight = value * 10;
                 };
 
-                setInterval(addBar, 100);
-                setInterval(function() {delimeter=true;}, 2000);
+                var addBarActiv = setInterval(addBar, 75);
+
+                fillEmptyGraph();
 
                 scope.$watch(listenTo, function(value) {
                     calculateBarHeight(value);
