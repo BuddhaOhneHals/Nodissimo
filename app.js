@@ -6,9 +6,12 @@
 var express = require('express')
   , routes = require('./routes')
   , http = require('http')
+  , url = require('url')
+  , util = require('util')
   , path = require('path');
 var mongo = require('mongoskin');
 
+// Express stuff. Do we need all of it?
 var app = module.exports = express();
 
 app.configure(function(){
@@ -31,37 +34,92 @@ app.configure('development', function(){
 
 app.get('/', routes.index);
 
-
+// Starts the express server
 var server = http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));
 });
 
+
+// Logging Server
 var io = require('socket.io').listen(server);
-var current_visits = 0;
+var liveListener = {};
 
 io.sockets.on('connection', function (socket) {
-    socket.join('listener');
-    io.sockets.in('listener').emit('update', { current_visits: current_visits });
+    socket.on('addLiveListener', function (tags) {
+        console.log(tags);
+        liveListener[tags] = 0;
+        socket.join(util.format('live-%s', tags));
+    });
 });
 
-var countdown = function() {
-    console.log(current_visits);
-    if(current_visits > 0) {
-        current_visits--;
-        io.sockets.in('listener').emit('update', { current_visits: current_visits });
+var parseTags = function(tags) {
+    return tags.split(':');
+}
+
+var liveCountdown = function(tags) {
+    console.log(tags);
+    if(liveListener[tags] > 0) {
+        liveListener[tags]--;
+        io.sockets.in(util.format('live-%s', tags)).emit('liveUpdate', { value: tags, count: liveListener[tags] });
     }
 };
-// Logging Server
 
 http.createServer(function (request, response) {
-    mongo.db('localhost:27017/nodissimo').collection('visits').insert({
-        timestamp: new Date(),
-        useragent: request.headers['user-agent']
+    var mongodb = mongo.db('localhost:27017/nodissimo');
+    var params = url.parse(request.url, true).query;
+    var ptags = parseTags(params.tags);
+    var tags = params.tags;
+    var count = 1.0;
+    var cur_date = new Date();
+
+    if(params.count)
+        count = parseFloat(params.count);
+
+    // Insert the log request
+    mongodb.collection('log_request').insert({
+        tags: ptags,
+        timestamp: cur_date,
+        count: count
     });
-    current_visits++;
-    io.sockets.in('listener').emit('update', { current_visits: current_visits });
-    setTimeout(countdown, 1000);
+
+    // Make an upsert (Update, if available, otherwise insert new)
+    mongodb.collection('log_daily').update({
+        tags: ptags,
+        day: cur_date.getDate(),
+        month: cur_date.getMonth(),
+        year: cur_date.getYear()
+    }, { $inc: { count: count } }, true);
+    mongodb.collection('log_monthly').update({
+        tags: ptags,
+        month: cur_date.getMonth(),
+        year: cur_date.getYear()
+    }, { $inc: { count: count } }, true);
+    mongodb.collection('log_yearly').update({
+        tags: ptags,
+        year: cur_date.getYear()
+    }, { $inc: { count: count } }, true);
+    mongodb.collection('log_monthly').update({
+        tags: ptags
+    }, { $inc: { count: count } }, true);
+
+    var tagString = undefined;
+    for(var i=0; i<ptags.length; i++) {
+        if (!tagString)
+            tagString = ptags[i];
+        else
+            tagString = tagString + ':' + ptags[i];
+
+        if (liveListener[tagString] >= 0) {
+            liveListener[tagString]++;
+            console.log(liveListener[tagString])
+            io.sockets.in(util.format('live-%s', tagString)).emit('liveUpdate', { value: tagString, count: liveListener[tagString] });
+            setTimeout(liveCountdown, 1000, tagString);
+        }
+    }
+
     response.writeHead(200, {'Content-Type': 'text/plain'});
     response.end('Logged');
-}).listen(8080);
+}).listen(8080, function() {
+    console.log("Logging http server listening on port " + 8080);
+});
 

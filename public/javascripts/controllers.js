@@ -1,13 +1,19 @@
 
 function Dashboard($scope, $http, socket) {
-    $scope.current_visits = 0;
+    $scope.liveData = {};
 
-    socket._on('update', function (data) {
-        $scope.current_visits = data.current_visits;
+    socket._on('liveUpdate', function (data) {
+        console.log(data);
+        $scope.liveData[data.value] = data.count;
     });
 
+    $scope.addGraphListener = function(tags) {
+        $scope.liveData[tags] = 0;
+        socket._emit('addLiveListener', tags);
+    };
+
     $scope.generateLoad = function() {
-        $http.get('http://localhost:8080/');
+        $http.get('http://localhost:8080/?tags=video:visits:test');
     };
 }
 

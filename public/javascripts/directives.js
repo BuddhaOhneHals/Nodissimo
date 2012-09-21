@@ -23,7 +23,7 @@ angular.module('dashboard.directives', []).
                 var self = this;
                 var barHeight = 0;
                 var jElement = $(element[0]);
-                var listenTo = attrs.listen;
+                var tags = attrs.tags;
                 var paused = false;
                 var delimeterCount = 0;
 
@@ -76,7 +76,10 @@ angular.module('dashboard.directives', []).
 
                 fillEmptyGraph();
 
-                scope.$watch(listenTo, function(value) {
+                console.log(tags);
+                scope.addGraphListener(tags);
+
+                scope.$watch('liveData["' + tags + '"]', function(value) {
                     calculateBarHeight(value);
                     scope.listen_value = value;
                 });
